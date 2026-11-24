@@ -1,1 +1,48 @@
 
+flowchart TB
+    Internet((Internet))
+
+    subgraph VPC["Project-VPC | 10.0.0.0/16"]
+        IGW["Internet Gateway"]
+
+        subgraph Public["Public Subnet | 10.0.1.0/24"]
+            PRT["Public Route Table"]
+            PSG["Public-Web-SG"]
+            WEB["Public EC2<br/>Amazon Linux 2023<br/>Apache Web Server"]
+        end
+
+        subgraph Private["Private Subnet | 10.0.2.0/24"]
+            PRIVRT["Private Route Table"]
+            PRISG["Private-App-SG"]
+            APP["Private EC2<br/>Application Server"]
+        end
+
+        IAM["EC2-Monitoring-Role"]
+    end
+
+    CW["Amazon CloudWatch<br/>CPUUtilization Alarm > 70%<br/>StatusCheckFailed Alarm"]
+    SNS["Amazon SNS<br/>StandardEC2-Health-Alerts"]
+    EMAIL["Email Notification"]
+
+    Internet <--> IGW
+    IGW --> PRT
+    PRT --> WEB
+    WEB --- PSG
+    PRIVRT --> APP
+    APP --- PRISG
+
+    IAM -.-> WEB
+    IAM -.-> APP
+
+    WEB -->|"EC2 metrics"| CW
+    CW -->|"Alarm action"| SNS
+    SNS --> EMAIL
+
+    classDef compute fill:#fff0d9,stroke:#e58b00,color:#222
+    classDef monitor fill:#fce4f2,stroke:#c21875,color:#222
+    classDef network fill:#e6f0ff,stroke:#2875c7,color:#222
+
+    class WEB,APP compute
+    class CW,SNS,EMAIL monitor
+    class IGW,PRT,PRIVRT network
+
